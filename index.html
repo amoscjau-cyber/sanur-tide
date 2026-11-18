@@ -90,7 +90,7 @@
     <div class="tide-card">
         <div class="tide-header">
             <span class="tide-icon">📈</span>
-            <span id="tide-status">High Tide in --</span>
+            <span id="tide-status">High Tide in 1h 03m</span>
         </div>
         <div class="tide-details" id="tide-desc">Next high tide expected at 4:33 PM</div>
     </div>
@@ -98,8 +98,8 @@
     <!-- Clock & Currency Row -->
     <div class="bottom-row">
         <div>
-            <div class="time-display" id="clock">--:--</div>
-            <div class="date-display" id="date">--</div>
+            <div class="time-display" id="clock">3:30<span class="time-ampm">PM</span></div>
+            <div class="date-display" id="date">Wednesday, 18 November</div>
         </div>
         <div class="exchange-box">
             <div class="exchange-label">IDR</div>
@@ -112,36 +112,35 @@
 
     <script>
         function updateAll() {
-            const now = new Date();
-            
-            // 1. Clock Update
-            let hours = now.getHours();
-            const minutes = now.getMinutes().toString().padStart(2, '0');
-            const ampm = hours >= 12 ? 'PM' : 'AM';
-            hours = hours % 12 || 12;
-            document.getElementById('clock').innerHTML = `${hours}:${minutes}<span class="time-ampm">${ampm}</span>`;
-            
-            const options = { weekday: 'long', day: 'numeric', month: 'long' };
-            document.getElementById('date').innerText = now.toLocaleDateString('en-GB', options);
+            try {
+                const now = new Date();
+                let hours = now.getHours();
+                const minutes = now.getMinutes().toString().padStart(2, '0');
+                const ampm = hours >= 12 ? 'PM' : 'AM';
+                hours = hours % 12 || 12;
+                
+                document.getElementById('clock').innerHTML = `${hours}:${minutes}<span class="time-ampm">${ampm}</span>`;
+                
+                const options = { weekday: 'long', day: 'numeric', month: 'long' };
+                document.getElementById('date').innerText = now.toLocaleDateString('en-GB', options);
 
-            // 2. Tide Countdown (Targeting 4:33 PM today)
-            const targetTide = new Date();
-            targetTide.setHours(16, 33, 0, 0); // 4:33 PM
-            
-            let diffSec = Math.floor((targetTide - now) / 1000);
-            if (diffSec < 0) {
-                // If past 4:33 PM, target the next one (10:06 PM low tide or next high)
-                targetTide.setHours(22, 6, 0, 0);
-                diffSec = Math.floor((targetTide - now) / 1000);
-            }
+                // Target 4:33 PM
+                const target = new Date();
+                target.setHours(16, 33, 0, 0);
+                
+                let diffSec = Math.floor((target - now) / 1000);
+                if (diffSec < 0) diffSec = 0;
+                
+                const tHours = Math.floor(diffSec / 3600);
+                const tMins = Math.floor((diffSec % 3600) / 60);
 
-            const tHours = Math.floor(diffSec / 3600);
-            const tMins = Math.floor((diffSec % 3600) / 60);
-
-            if (tHours > 0) {
-                document.getElementById('tide-status').innerText = `High Tide in ${tHours}h ${tMins}m`;
-            } else {
-                document.getElementById('tide-status').innerText = `High Tide in ${tMins} mins`;
+                if (tHours > 0) {
+                    document.getElementById('tide-status').innerText = `High Tide in ${tHours}h ${tMins < 10 ? '0' : ''}${tMins}m`;
+                } else {
+                    document.getElementById('tide-status').innerText = `High Tide in ${tMins} mins`;
+                }
+            } catch (e) {
+                console.log("Clock error", e);
             }
         }
 
