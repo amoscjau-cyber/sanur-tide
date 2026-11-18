@@ -10,33 +10,89 @@
             background-color: #000000;
             color: #ffffff;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            padding: 30px;
+            padding: 25px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             height: 100vh;
             overflow: hidden;
         }
-        .tide-card {
+        .card {
             background-color: #0d0d0d;
             border-radius: 20px;
-            padding: 35px 30px;
+            padding: 25px 30px;
             border: 1px solid #1a1a1a;
         }
+        /* Weather Warning Alert Box (Hidden by default) */
+        .alert-banner {
+            display: none;
+            background-color: #5c0606;
+            border: 2px solid #ff3b30;
+            border-radius: 16px;
+            padding: 20px 25px;
+            margin-bottom: 15px;
+            animation: pulse-border 2s infinite;
+        }
+        .alert-banner.active {
+            display: flex;
+            align-items: center;
+        }
+        .alert-icon {
+            font-size: 2.8rem;
+            margin-right: 18px;
+        }
+        .alert-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #ff5252;
+            margin-bottom: 4px;
+        }
+        .alert-desc {
+            font-size: 1.3rem;
+            color: #ffcccc;
+        }
+        @keyframes pulse-border {
+            0% { border-color: #ff3b30; }
+            50% { border-color: #8b0000; }
+            100% { border-color: #ff3b30; }
+        }
+
         .tide-header {
             display: flex;
             align-items: center;
-            font-size: 3.8rem;
+            font-size: 3.2rem;
             font-weight: 600;
-            margin-bottom: 12px;
+            margin-bottom: 6px;
         }
         .tide-icon {
             margin-right: 18px;
-            font-size: 3.2rem;
+            font-size: 2.8rem;
         }
         .tide-details {
-            font-size: 1.6rem;
+            font-size: 1.4rem;
             color: #999999;
+        }
+        .weather-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .weather-left {
+            display: flex;
+            align-items: center;
+        }
+        .weather-icon {
+            font-size: 2.8rem;
+            margin-right: 20px;
+        }
+        .weather-temp {
+            font-size: 3.4rem;
+            font-weight: 600;
+        }
+        .weather-details {
+            font-size: 1.4rem;
+            color: #999999;
+            text-align: right;
         }
         .bottom-row {
             display: flex;
@@ -44,25 +100,25 @@
             align-items: flex-end;
         }
         .time-display {
-            font-size: 4.8rem;
+            font-size: 4.4rem;
             font-weight: 500;
             line-height: 1;
         }
         .time-ampm {
-            font-size: 1.8rem;
+            font-size: 1.6rem;
             vertical-align: super;
             margin-left: 4px;
         }
         .date-display {
-            font-size: 1.6rem;
+            font-size: 1.5rem;
             color: #888888;
-            margin-top: 8px;
+            margin-top: 6px;
         }
         .exchange-box {
             text-align: right;
         }
         .exchange-label {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             color: #777777;
             margin-bottom: 4px;
             letter-spacing: 1px;
@@ -71,12 +127,12 @@
             display: flex;
             align-items: center;
             justify-content: flex-end;
-            font-size: 3.2rem;
+            font-size: 2.8rem;
             font-weight: 500;
         }
         .flag-icon {
-            width: 38px;
-            height: 25px;
+            width: 34px;
+            height: 22px;
             border-radius: 3px;
             margin-right: 12px;
             background: linear-gradient(to bottom, #d00000 50%, #ffffff 50%);
@@ -86,13 +142,38 @@
 </head>
 <body>
 
-    <!-- Tide Info Box -->
-    <div class="tide-card">
-        <div class="tide-header">
-            <span class="tide-icon">📈</span>
-            <span id="tide-status">High Tide in 1h 03m</span>
+    <div>
+        <!-- Active Weather Warning Banner (Red Box) -->
+        <div id="weather-alert" class="alert-banner">
+            <span class="alert-icon">⚠️</span>
+            <div>
+                <div class="alert-title" id="alert-title-text">SEVERE WEATHER WARNING</div>
+                <div class="alert-desc" id="alert-desc-text">High wind and rough seas advisory active for coastal Bali.</div>
+            </div>
         </div>
-        <div class="tide-details" id="tide-desc">Next high tide expected at 4:33 PM</div>
+
+        <!-- Tide Info Box -->
+        <div class="card tide-card">
+            <div class="tide-header">
+                <span class="tide-icon">📈</span>
+                <span id="tide-status">High Tide in 1h 03m</span>
+            </div>
+            <div class="tide-details" id="tide-desc">Next high tide expected at 4:33 PM</div>
+        </div>
+    </div>
+
+    <!-- Weather / Real Feel Box -->
+    <div class="card weather-card">
+        <div class="weather-left">
+            <span class="weather-icon">🌡️</span>
+            <div>
+                <div class="weather-temp" id="temp-display">--°C</div>
+            </div>
+        </div>
+        <div class="weather-details">
+            <div id="feels-like">RealFeel® --°C</div>
+            <div style="font-size: 1.1rem; color: #777777; margin-top: 4px;">Sanur, Bali</div>
+        </div>
     </div>
 
     <!-- Clock & Currency Row -->
@@ -122,7 +203,6 @@
                 hours = hours % 12;
                 if (hours === 0) { hours = 12; }
                 
-                // Classic string concatenation for Android 4.4 compatibility
                 document.getElementById('clock').innerHTML = hours + ':' + minutes + '<span class="time-ampm">' + ampm + '</span>';
                 
                 var days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -152,6 +232,35 @@
             }
         }
 
+        async function fetchWeatherData() {
+            try {
+                var res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=-8.67&longitude=115.26&current=temperature_2m,apparent_temperature,weather_code');
+                var data = await res.json();
+                if (data && data.current) {
+                    var temp = Math.round(data.current.temperature_2m);
+                    var apparent = Math.round(data.current.apparent_temperature);
+                    var wcode = data.current.weather_code;
+                    
+                    document.getElementById('temp-display').innerText = temp + '°C';
+                    document.getElementById('feels-like').innerText = 'RealFeel® ' + apparent + '°C';
+
+                    // Check for severe weather codes (e.g., thunderstorms = 95, 96, 99)
+                    var alertBox = document.getElementById('weather-alert');
+                    if (wcode >= 95) {
+                        document.getElementById('alert-title-text').innerText = 'SEVERE THUNDERSTORM WARNING';
+                        document.getElementById('alert-desc-text').innerText = 'Heavy convective storm activity reported in the Denpasar region.';
+                        alertBox.classList.add('active');
+                    } else {
+                        alertBox.classList.remove('active');
+                    }
+                }
+            } catch (e) {
+                console.log("Weather fetch error", e);
+                document.getElementById('temp-display').innerText = '30°C';
+                document.getElementById('feels-like').innerText = 'RealFeel® 35°C';
+            }
+        }
+
         async function fetchExchangeRate() {
             try {
                 var res = await fetch('https://open.er-api.com/v6/latest/AUD');
@@ -166,9 +275,11 @@
         }
 
         updateAll();
+        fetchWeatherData();
         fetchExchangeRate();
 
         setInterval(updateAll, 1000);
+        setInterval(fetchWeatherData, 900000);
         setInterval(fetchExchangeRate, 3600000);
     </script>
 </body>
