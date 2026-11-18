@@ -98,8 +98,8 @@
     <!-- Clock & Currency Row -->
     <div class="bottom-row">
         <div>
-            <div class="time-display" id="clock">3:30<span class="time-ampm">PM</span></div>
-            <div class="date-display" id="date">Wednesday, 18 November</div>
+            <div class="time-display" id="clock">--:--</div>
+            <div class="date-display" id="date">--</div>
         </div>
         <div class="exchange-box">
             <div class="exchange-label">IDR</div>
@@ -113,43 +113,51 @@
     <script>
         function updateAll() {
             try {
-                const now = new Date();
-                let hours = now.getHours();
-                const minutes = now.getMinutes().toString().padStart(2, '0');
-                const ampm = hours >= 12 ? 'PM' : 'AM';
-                hours = hours % 12 || 12;
+                var now = new Date();
+                var hours = now.getHours();
+                var minutes = now.getMinutes();
+                if (minutes < 10) { minutes = '0' + minutes; }
                 
-                document.getElementById('clock').innerHTML = `${hours}:${minutes}<span class="time-ampm">${ampm}</span>`;
+                var ampm = hours >= 12 ? 'PM' : 'AM';
+                hours = hours % 12;
+                if (hours === 0) { hours = 12; }
                 
-                const options = { weekday: 'long', day: 'numeric', month: 'long' };
-                document.getElementById('date').innerText = now.toLocaleDateString('en-GB', options);
+                // Classic string concatenation for Android 4.4 compatibility
+                document.getElementById('clock').innerHTML = hours + ':' + minutes + '<span class="time-ampm">' + ampm + '</span>';
+                
+                var days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                var months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                
+                var dateString = days[now.getDay()] + ', ' + now.getDate() + ' ' + months[now.getMonth()];
+                document.getElementById('date').innerText = dateString;
 
-                // Target 4:33 PM
-                const target = new Date();
+                // Target 4:33 PM countdown
+                var target = new Date();
                 target.setHours(16, 33, 0, 0);
                 
-                let diffSec = Math.floor((target - now) / 1000);
-                if (diffSec < 0) diffSec = 0;
+                var diffSec = Math.floor((target - now) / 1000);
+                if (diffSec < 0) { diffSec = 0; }
                 
-                const tHours = Math.floor(diffSec / 3600);
-                const tMins = Math.floor((diffSec % 3600) / 60);
+                var tHours = Math.floor(diffSec / 3600);
+                var tMins = Math.floor((diffSec % 3600) / 60);
+                if (tMins < 10) { tMins = '0' + tMins; }
 
                 if (tHours > 0) {
-                    document.getElementById('tide-status').innerText = `High Tide in ${tHours}h ${tMins < 10 ? '0' : ''}${tMins}m`;
+                    document.getElementById('tide-status').innerText = 'High Tide in ' + tHours + 'h ' + tMins + 'm';
                 } else {
-                    document.getElementById('tide-status').innerText = `High Tide in ${tMins} mins`;
+                    document.getElementById('tide-status').innerText = 'High Tide in ' + tMins + ' mins';
                 }
             } catch (e) {
-                console.log("Clock error", e);
+                console.log("Error:", e);
             }
         }
 
         async function fetchExchangeRate() {
             try {
-                const res = await fetch('https://open.er-api.com/v6/latest/AUD');
-                const data = await res.json();
+                var res = await fetch('https://open.er-api.com/v6/latest/AUD');
+                var data = await res.json();
                 if (data && data.rates && data.rates.IDR) {
-                    const rate = Math.round(data.rates.IDR);
+                    var rate = Math.round(data.rates.IDR);
                     document.getElementById('exchange-rate').innerText = rate.toLocaleString();
                 }
             } catch (e) {
@@ -162,9 +170,6 @@
 
         setInterval(updateAll, 1000);
         setInterval(fetchExchangeRate, 3600000);
-    </script>
-</body>
-</html>
     </script>
 </body>
 </html>
