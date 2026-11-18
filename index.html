@@ -89,10 +89,10 @@
     <!-- Tide Info Box -->
     <div class="tide-card">
         <div class="tide-header">
-            <span class="tide-icon" id="tide-icon">📉</span>
-            <span id="tide-status">Low Tide in 2h 15m</span>
+            <span class="tide-icon">📈</span>
+            <span id="tide-status">High Tide in --</span>
         </div>
-        <div class="tide-details" id="tide-desc">Next low tide expected at 5:15 PM</div>
+        <div class="tide-details" id="tide-desc">Next high tide expected at 4:33 PM</div>
     </div>
 
     <!-- Clock & Currency Row -->
@@ -111,17 +111,38 @@
     </div>
 
     <script>
-        function updateDateTime() {
+        function updateAll() {
             const now = new Date();
+            
+            // 1. Clock Update
             let hours = now.getHours();
             const minutes = now.getMinutes().toString().padStart(2, '0');
             const ampm = hours >= 12 ? 'PM' : 'AM';
             hours = hours % 12 || 12;
-            
             document.getElementById('clock').innerHTML = `${hours}:${minutes}<span class="time-ampm">${ampm}</span>`;
             
             const options = { weekday: 'long', day: 'numeric', month: 'long' };
             document.getElementById('date').innerText = now.toLocaleDateString('en-GB', options);
+
+            // 2. Tide Countdown (Targeting 4:33 PM today)
+            const targetTide = new Date();
+            targetTide.setHours(16, 33, 0, 0); // 4:33 PM
+            
+            let diffSec = Math.floor((targetTide - now) / 1000);
+            if (diffSec < 0) {
+                // If past 4:33 PM, target the next one (10:06 PM low tide or next high)
+                targetTide.setHours(22, 6, 0, 0);
+                diffSec = Math.floor((targetTide - now) / 1000);
+            }
+
+            const tHours = Math.floor(diffSec / 3600);
+            const tMins = Math.floor((diffSec % 3600) / 60);
+
+            if (tHours > 0) {
+                document.getElementById('tide-status').innerText = `High Tide in ${tHours}h ${tMins}m`;
+            } else {
+                document.getElementById('tide-status').innerText = `High Tide in ${tMins} mins`;
+            }
         }
 
         async function fetchExchangeRate() {
@@ -137,14 +158,14 @@
             }
         }
 
-        updateDateTime();
+        updateAll();
         fetchExchangeRate();
 
-        setInterval(updateDateTime, 1000);
+        setInterval(updateAll, 1000);
         setInterval(fetchExchangeRate, 3600000);
     </script>
 </body>
-
+</html>
     </script>
 </body>
 </html>
