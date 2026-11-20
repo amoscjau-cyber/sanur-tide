@@ -69,21 +69,13 @@
             align-items: center;
             justify-content: space-between;
         }
-        .weather-left {
-            display: flex;
-            align-items: center;
-        }
-        .weather-icon {
-            font-size: 2.8rem;
-            margin-right: 20px;
-        }
-        .weather-temp {
-            font-size: 3.4rem;
+        .feels-like-main {
+            font-size: 3.2rem;
             font-weight: 600;
         }
-        .weather-details {
-            font-size: 1.4rem;
-            color: #999999;
+        .weather-location {
+            font-size: 1.2rem;
+            color: #777777;
             text-align: right;
         }
         .bottom-row {
@@ -130,6 +122,19 @@
             background: linear-gradient(to bottom, #d00000 50%, #ffffff 50%);
             display: inline-block;
         }
+        .trend-arrow {
+            margin-left: 10px;
+            font-size: 2.1rem;
+        }
+        .trend-up {
+            color: #28cd41;
+        }
+        .trend-down {
+            color: #ff453a;
+        }
+        .trend-flat {
+            color: #777777;
+        }
         .status-dot {
             display: inline-block;
             width: 8px;
@@ -166,19 +171,11 @@
         </div>
     </div>
 
-    <!-- Weather / Real Feel Box -->
+    <!-- Real Feel Only Box -->
     <div class="card weather-card">
-        <div class="weather-left">
-            <span class="weather-icon">🌡️</span>
-            <div>
-                <div class="weather-temp" id="temp-display">30°C</div>
-            </div>
-        </div>
-        <div class="weather-details">
-            <div id="feels-like">RealFeel® 35°C</div>
-            <div style="font-size: 1.1rem; color: #777777; margin-top: 4px;">
-                Sanur, Bali <span id="weather-dot" class="status-dot"></span>
-            </div>
+        <div class="feels-like-main" id="feels-like">RealFeel® 35°C</div>
+        <div class="weather-location">
+            Sanur, Bali <span id="weather-dot" class="status-dot"></span>
         </div>
     </div>
 
@@ -193,11 +190,14 @@
             <div class="exchange-rate-container">
                 <span class="flag-icon"></span>
                 <span id="exchange-rate">12,274</span>
+                <span id="rate-trend" class="trend-arrow trend-flat">—</span>
             </div>
         </div>
     </div>
 
     <script>
+        var lastRate = 12274;
+
         function formatNumberCommas(num) {
             return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
         }
@@ -263,7 +263,6 @@
             } catch (e) {}
         }
 
-        // Legacy XMLHttpRequest helper for Android 4.4 compatibility
         function legacyGet(url, callback, onError) {
             try {
                 var xhr = new XMLHttpRequest();
@@ -289,14 +288,12 @@
         }
 
         function fetchWeather() {
-            var url = 'http://api.open-meteo.com/v1/forecast?latitude=-8.67&longitude=115.26&current=temperature_2m,apparent_temperature,weather_code';
+            var url = 'http://api.open-meteo.com/v1/forecast?latitude=-8.67&longitude=115.26&current=apparent_temperature,weather_code';
             legacyGet(url, function(data) {
                 if (data && data.current) {
-                    var temp = Math.round(data.current.temperature_2m);
                     var apparent = Math.round(data.current.apparent_temperature);
                     var wcode = data.current.weather_code;
 
-                    document.getElementById('temp-display').innerText = temp + '°C';
                     document.getElementById('feels-like').innerText = 'RealFeel® ' + apparent + '°C';
                     document.getElementById('weather-dot').className = 'status-dot live';
 
@@ -312,21 +309,36 @@
             });
         }
 
+        function updateTrendArrow(newRate) {
+            var arrowEl = document.getElementById('rate-trend');
+            if (newRate > lastRate) {
+                arrowEl.innerText = '▲';
+                arrowEl.className = 'trend-arrow trend-up';
+            } else if (newRate < lastRate) {
+                arrowEl.innerText = '▼';
+                arrowEl.className = 'trend-arrow trend-down';
+            } else {
+                arrowEl.innerText = '—';
+                arrowEl.className = 'trend-arrow trend-flat';
+            }
+            lastRate = newRate;
+        }
+
         function fetchExchangeRate() {
-            // Primary: Frankfurter (European Central Bank) over plain HTTP (no SSL redirect)
             var primaryUrl = 'http://api.frankfurter.app/latest?from=AUD&to=IDR';
             legacyGet(primaryUrl, function(data) {
                 if (data && data.rates && data.rates.IDR) {
                     var rate = Math.round(data.rates.IDR);
+                    updateTrendArrow(rate);
                     document.getElementById('exchange-rate').innerText = formatNumberCommas(rate);
                     document.getElementById('rate-dot').className = 'status-dot live';
                 }
             }, function() {
-                // Backup: Open ER-API over plain HTTP
                 var backupUrl = 'http://open.er-api.com/v6/latest/AUD';
                 legacyGet(backupUrl, function(data) {
                     if (data && data.rates && data.rates.IDR) {
                         var rate = Math.round(data.rates.IDR);
+                        updateTrendArrow(rate);
                         document.getElementById('exchange-rate').innerText = formatNumberCommas(rate);
                         document.getElementById('rate-dot').className = 'status-dot live';
                     }
