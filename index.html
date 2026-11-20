@@ -6,125 +6,99 @@
     <title>Sanur Dashboard</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
+        html, body {
             background-color: #000000;
             color: #ffffff;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            padding: 25px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            height: 100vh;
-            overflow: hidden;
+            font-family: sans-serif;
+            width: 100%;
+            min-height: 100%;
+            padding: 20px;
         }
         .card {
-            background-color: #0d0d0d;
-            border-radius: 20px;
-            padding: 25px 30px;
-            border: 1px solid #1a1a1a;
+            background-color: #111111;
+            border-radius: 16px;
+            padding: 20px 24px;
+            border: 1px solid #222222;
+            margin-bottom: 16px;
         }
         .alert-banner {
             display: none;
             background-color: #5c0606;
             border: 2px solid #ff3b30;
-            border-radius: 16px;
-            padding: 20px 25px;
-            margin-bottom: 15px;
+            border-radius: 14px;
+            padding: 16px 20px;
+            margin-bottom: 16px;
         }
         .alert-banner.active {
-            display: flex;
-            align-items: center;
-        }
-        .alert-icon {
-            font-size: 2.8rem;
-            margin-right: 18px;
+            display: block;
         }
         .alert-title {
-            font-size: 1.8rem;
-            font-weight: 700;
+            font-size: 24px;
+            font-weight: bold;
             color: #ff5252;
             margin-bottom: 4px;
         }
         .alert-desc {
-            font-size: 1.3rem;
+            font-size: 18px;
             color: #ffcccc;
         }
-        .tide-header {
-            display: flex;
-            align-items: center;
-            font-size: 3.2rem;
-            font-weight: 600;
+        .tide-status {
+            font-size: 40px;
+            font-weight: bold;
             margin-bottom: 6px;
         }
-        .tide-icon {
-            margin-right: 18px;
-            font-size: 2.8rem;
+        .tide-desc {
+            font-size: 20px;
+            color: #aaaaaa;
         }
-        .tide-details {
-            font-size: 1.4rem;
-            color: #999999;
+        .feels-like-line {
+            font-size: 38px;
+            font-weight: bold;
+            margin-bottom: 6px;
         }
-        .weather-card {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+        .location-line {
+            font-size: 18px;
+            color: #888888;
         }
-        .feels-like-main {
-            font-size: 3.2rem;
-            font-weight: 600;
-        }
-        .weather-location {
-            font-size: 1.2rem;
-            color: #777777;
-            text-align: right;
-        }
-        .bottom-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
+        .bottom-table {
+            width: 100%;
+            margin-top: 10px;
         }
         .time-display {
-            font-size: 4.4rem;
-            font-weight: 500;
-            line-height: 1;
+            font-size: 52px;
+            font-weight: bold;
+            line-height: 1.1;
         }
-        .time-ampm {
-            font-size: 1.6rem;
-            vertical-align: super;
-            margin-left: 4px;
+        .ampm-text {
+            font-size: 24px;
         }
         .date-display {
-            font-size: 1.5rem;
-            color: #888888;
-            margin-top: 6px;
+            font-size: 20px;
+            color: #999999;
+            margin-top: 4px;
         }
         .exchange-box {
             text-align: right;
+            margin-top: 14px;
         }
         .exchange-label {
-            font-size: 1.1rem;
-            color: #777777;
+            font-size: 16px;
+            color: #888888;
             margin-bottom: 4px;
-            letter-spacing: 1px;
         }
-        .exchange-rate-container {
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            font-size: 2.8rem;
-            font-weight: 500;
+        .exchange-rate {
+            font-size: 38px;
+            font-weight: bold;
         }
-        .flag-icon {
-            width: 34px;
-            height: 22px;
-            border-radius: 3px;
-            margin-right: 12px;
-            background: linear-gradient(to bottom, #d00000 50%, #ffffff 50%);
+        .flag-box {
             display: inline-block;
-        }
-        .trend-arrow {
-            margin-left: 10px;
-            font-size: 1em;
+            width: 36px;
+            height: 22px;
+            margin-right: 10px;
+            vertical-align: middle;
+            background-color: #d00000;
+            border-top: 11px solid #d00000;
+            border-bottom: 11px solid #ffffff;
         }
         .trend-up {
             color: #28cd41;
@@ -133,14 +107,14 @@
             color: #ff453a;
         }
         .trend-flat {
-            color: #777777;
+            color: #888888;
         }
         .status-dot {
             display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background-color: #333333;
+            width: 10px;
+            height: 10px;
+            border-radius: 5px;
+            background-color: #444444;
             margin-left: 6px;
             vertical-align: middle;
         }
@@ -151,49 +125,36 @@
 </head>
 <body>
 
-    <div>
-        <!-- Active Weather Warning Banner (Red Box) -->
-        <div id="weather-alert" class="alert-banner">
-            <span class="alert-icon">⚠️</span>
-            <div>
-                <div class="alert-title" id="alert-title-text">SEVERE WEATHER WARNING</div>
-                <div class="alert-desc" id="alert-desc-text">High wind and rough seas advisory active for coastal Bali.</div>
-            </div>
-        </div>
-
-        <!-- Tide Info Box -->
-        <div class="card tide-card">
-            <div class="tide-header">
-                <span class="tide-icon" id="tide-icon">📉</span>
-                <span id="tide-status">Loading Tide...</span>
-            </div>
-            <div class="tide-details" id="tide-desc">Calculating next tide</div>
-        </div>
+    <div id="weather-alert" class="alert-banner">
+        <div class="alert-title" id="alert-title-text">SEVERE WEATHER WARNING</div>
+        <div class="alert-desc" id="alert-desc-text">High wind and rough seas advisory active for coastal Bali.</div>
     </div>
 
-    <!-- Real Feel Only Box -->
-    <div class="card weather-card">
-        <div class="feels-like-main">
-            <span id="feels-like">RealFeel® 35°C</span>
-            <span id="temp-trend" class="trend-arrow trend-flat">—</span>
+    <div class="card">
+        <div class="tide-status" id="tide-status">Loading Tide...</div>
+        <div class="tide-desc" id="tide-desc">Calculating next tide</div>
+    </div>
+
+    <div class="card">
+        <div class="feels-like-line">
+            <span id="feels-like">RealFeel 35C</span>
+            <span id="temp-trend" class="trend-flat">=</span>
         </div>
-        <div class="weather-location">
+        <div class="location-line">
             Sanur, Bali <span id="weather-dot" class="status-dot"></span>
         </div>
     </div>
 
-    <!-- Clock & Currency Row -->
-    <div class="bottom-row">
-        <div>
-            <div class="time-display" id="clock">--:--</div>
-            <div class="date-display" id="date">--</div>
-        </div>
+    <div class="bottom-table">
+        <div class="time-display" id="clock">--:--</div>
+        <div class="date-display" id="date">--</div>
+
         <div class="exchange-box">
             <div class="exchange-label">IDR <span id="rate-dot" class="status-dot"></span></div>
-            <div class="exchange-rate-container">
-                <span class="flag-icon"></span>
+            <div class="exchange-rate">
+                <span class="flag-box"></span>
                 <span id="exchange-rate">12,274</span>
-                <span id="rate-trend" class="trend-arrow trend-flat">—</span>
+                <span id="rate-trend" class="trend-flat">=</span>
             </div>
         </div>
     </div>
@@ -202,122 +163,171 @@
         var lastRate = 12274;
         var lastFeelsLike = 35;
 
-        function formatNumberCommas(num) {
-            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        function addCommas(n) {
+            var s = String(n);
+            var out = "";
+            while (s.length > 3) {
+                out = "," + s.slice(-3) + out;
+                s = s.slice(0, -3);
+            }
+            return s + out;
         }
 
-        function formatTime12(dateObj) {
-            var h = dateObj.getHours();
-            var m = dateObj.getMinutes();
-            var ap = h >= 12 ? 'PM' : 'AM';
+        function formatTime12(d) {
+            var h = d.getHours();
+            var m = d.getMinutes();
+            var ap = h >= 12 ? "PM" : "AM";
             h = h % 12;
             if (h === 0) { h = 12; }
-            if (m < 10) { m = '0' + m; }
-            return h + ':' + m + ' ' + ap;
+            if (m < 10) { m = "0" + m; }
+            return h + ":" + m + " " + ap;
         }
 
-        function updateAll() {
-            try {
-                var now = new Date();
-                var hours = now.getHours();
-                var minutes = now.getMinutes();
-                if (minutes < 10) { minutes = '0' + minutes; }
-                
-                var ampm = hours >= 12 ? 'PM' : 'AM';
-                hours = hours % 12;
-                if (hours === 0) { hours = 12; }
-                
-                document.getElementById('clock').innerHTML = hours + ':' + minutes + '<span class="time-ampm">' + ampm + '</span>';
-                
-                var days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                var months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-                
-                var dateString = days[now.getDay()] + ', ' + now.getDate() + ' ' + months[now.getMonth()];
-                document.getElementById('date').innerText = dateString;
+        function setTrend(el, currentVal, previousVal) {
+            if (!el) { return; }
+            if (currentVal > previousVal) {
+                el.innerHTML = "&#9650;";
+                el.className = "trend-up";
+            } else if (currentVal < previousVal) {
+                el.innerHTML = "&#9660;";
+                el.className = "trend-down";
+            } else {
+                el.innerHTML = "=";
+                el.className = "trend-flat";
+            }
+        }
 
-                // Continuous lunar tide cycle anchored to Nov 18, 2026 4:33 PM High Tide
-                var anchorHigh = new Date(2026, 10, 18, 16, 33, 0).getTime();
-                var nowMs = now.getTime();
-                var halfCycleMs = 22350 * 1000;
+        function updateClockAndTide() {
+            var now = new Date();
+            var h = now.getHours();
+            var m = now.getMinutes();
+            var ap = h >= 12 ? "PM" : "AM";
+            h = h % 12;
+            if (h === 0) { h = 12; }
+            var mStr = m < 10 ? "0" + m : String(m);
 
-                var elapsed = nowMs - anchorHigh;
-                var cyclesPassed = Math.floor(elapsed / halfCycleMs);
-                var nextEventMs = anchorHigh + ((cyclesPassed + 1) * halfCycleMs);
-                var nextEventDate = new Date(nextEventMs);
+            var clockEl = document.getElementById("clock");
+            if (clockEl) {
+                clockEl.innerHTML = h + ":" + mStr + ' <span class="ampm-text">' + ap + "</span>";
+            }
 
-                var isNextHigh = ((cyclesPassed + 1) % 2 === 0);
-                var tideLabel = isNextHigh ? 'High Tide' : 'Low Tide';
-                var tideIcon = isNextHigh ? '📈' : '📉';
+            var days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+            var months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            var dateEl = document.getElementById("date");
+            if (dateEl) {
+                dateEl.innerHTML = days[now.getDay()] + ", " + now.getDate() + " " + months[now.getMonth()];
+            }
 
-                var diffSec = Math.floor((nextEventMs - nowMs) / 1000);
-                if (diffSec < 0) { diffSec = 0; }
+            // Continuous lunar tide cycle anchored to Nov 18, 2026 4:33 PM High Tide
+            var anchorHigh = new Date(2026, 10, 18, 16, 33, 0).getTime();
+            var nowMs = now.getTime();
+            var halfCycleMs = 22350 * 1000;
 
-                var tHours = Math.floor(diffSec / 3600);
-                var tMins = Math.floor((diffSec % 3600) / 60);
+            var elapsed = nowMs - anchorHigh;
+            var cyclesPassed = Math.floor(elapsed / halfCycleMs);
+            var nextEventMs = anchorHigh + ((cyclesPassed + 1) * halfCycleMs);
+            var nextEventDate = new Date(nextEventMs);
 
-                document.getElementById('tide-icon').innerText = tideIcon;
+            var isNextHigh = ((cyclesPassed + 1) % 2 === 0);
+            var tideLabel = isNextHigh ? "High Tide" : "Low Tide";
+
+            var diffSec = Math.floor((nextEventMs - nowMs) / 1000);
+            if (diffSec < 0) { diffSec = 0; }
+
+            var tHours = Math.floor(diffSec / 3600);
+            var tMins = Math.floor((diffSec % 3600) / 60);
+
+            var statusEl = document.getElementById("tide-status");
+            if (statusEl) {
                 if (tHours > 0) {
-                    var minStr = tMins < 10 ? '0' + tMins : tMins;
-                    document.getElementById('tide-status').innerText = tideLabel + ' in ' + tHours + 'h ' + minStr + 'm';
+                    var minPad = tMins < 10 ? "0" + tMins : tMins;
+                    statusEl.innerHTML = tideLabel + " in " + tHours + "h " + minPad + "m";
                 } else {
-                    document.getElementById('tide-status').innerText = tideLabel + ' in ' + tMins + ' mins';
+                    statusEl.innerHTML = tideLabel + " in " + tMins + " mins";
                 }
+            }
 
-                document.getElementById('tide-desc').innerText = 'Next ' + tideLabel.toLowerCase() + ' expected at ' + formatTime12(nextEventDate);
-            } catch (e) {}
+            var descEl = document.getElementById("tide-desc");
+            if (descEl) {
+                descEl.innerHTML = "Next " + tideLabel.toLowerCase() + " expected at " + formatTime12(nextEventDate);
+            }
         }
 
-        function legacyGet(url, callback, onError) {
+        // JSONP callback for Open-Meteo (avoids XHR / CORS blocks on Android 4.4)
+        function handleWeather(data) {
+            if (!data || !data.current) { return; }
+            var apparent = Math.round(data.current.apparent_temperature);
+            var wcode = data.current.weather_code;
+
+            setTrend(document.getElementById("temp-trend"), apparent, lastFeelsLike);
+            lastFeelsLike = apparent;
+
+            var feelsEl = document.getElementById("feels-like");
+            if (feelsEl) {
+                feelsEl.innerHTML = "RealFeel " + apparent + "C";
+            }
+
+            var wDot = document.getElementById("weather-dot");
+            if (wDot) {
+                wDot.className = "status-dot live";
+            }
+
+            var alertBox = document.getElementById("weather-alert");
+            if (alertBox) {
+                if (wcode >= 95) {
+                    document.getElementById("alert-title-text").innerHTML = "SEVERE THUNDERSTORM WARNING";
+                    document.getElementById("alert-desc-text").innerHTML = "Heavy storm activity reported in the Sanur / Denpasar area.";
+                    alertBox.className = "alert-banner active";
+                } else {
+                    alertBox.className = "alert-banner";
+                }
+            }
+        }
+
+        function loadWeatherScript() {
+            var s = document.createElement("script");
+            s.src = "https://api.open-meteo.com/v1/forecast?latitude=-8.67&longitude=115.26&current=apparent_temperature,weather_code&callback=handleWeather";
+            document.body.appendChild(s);
+        }
+
+        function tryExchangeUrl(url, onFail) {
             try {
                 var xhr = new XMLHttpRequest();
-                xhr.open('GET', url, true);
+                xhr.open("GET", url, true);
                 xhr.onreadystatechange = function() {
                     if (xhr.readyState === 4) {
                         if (xhr.status === 200) {
                             try {
                                 var data = JSON.parse(xhr.responseText);
-                                callback(data);
-                            } catch (parseErr) {
-                                if (onError) onError();
-                            }
-                        } else {
-                            if (onError) onError();
+                                if (data && data.rates && data.rates.IDR) {
+                                    var rate = Math.round(data.rates.IDR);
+                                    setTrend(document.getElementById("rate-trend"), rate, lastRate);
+                                    lastRate = rate;
+                                    document.getElementById("exchange-rate").innerHTML = addCommas(rate);
+                                    document.getElementById("rate-dot").className = "status-dot live";
+                                    return;
+                                }
+                            } catch (e) {}
                         }
+                        if (onFail) { onFail(); }
                     }
                 };
                 xhr.send();
-            } catch (reqErr) {
-                if (onError) onError();
+            } catch (e) {
+                if (onFail) { onFail(); }
             }
         }
 
-        function setTrendElement(el, newVal, prevVal) {
-            if (newVal > prevVal) {
-                el.innerText = '▲';
-                el.className = 'trend-arrow trend-up';
-            } else if (newVal < prevVal) {
-                el.innerText = '▼';
-                el.className = 'trend-arrow trend-down';
-            } else {
-                el.innerText = '—';
-                el.className = 'trend-arrow trend-flat';
-            }
+        function fetchExchangeRate() {
+            tryExchangeUrl("https://api.frankfurter.app/latest?from=AUD&to=IDR", function() {
+                tryExchangeUrl("https://open.er-api.com/v6/latest/AUD", null);
+            });
         }
 
-        function fetchWeather() {
-            var url = 'http://api.open-meteo.com/v1/forecast?latitude=-8.67&longitude=115.26&current=apparent_temperature,weather_code';
-            legacyGet(url, function(data) {
-                if (data && data.current) {
-                    var apparent = Math.round(data.current.apparent_temperature);
-                    var wcode = data.current.weather_code;
+        updateClockAndTide();
+        loadWeatherScript();
+        fetchExchangeRate();
 
-                    setTrendElement(document.getElementById('temp-trend'), apparent, lastFeelsLike);
-                    lastFeelsLike = apparent;
-
-                    document.getElementById('feels-like').innerText = 'RealFeel® ' + apparent + '°C';
-                    document.getElementById('weather-dot').className = 'status-dot live';
-
-                    var alertBox = document.getElementById('weather-alert');
-                    if (wcode >= 95) {
-                        document.getElementById('alert-title-text
-   
+        setInterval(updateClockAndTide, 1000);
+        setInterval(loadWeatherScript, 900000);
+        setInterval(fetchExchange
