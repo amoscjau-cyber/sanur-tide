@@ -264,24 +264,31 @@
         }
 
         // Legacy XMLHttpRequest helper for Android 4.4 compatibility
-        function legacyGet(url, callback) {
+        function legacyGet(url, callback, onError) {
             try {
                 var xhr = new XMLHttpRequest();
                 xhr.open('GET', url, true);
                 xhr.onreadystatechange = function() {
-                    if (xhr.readyState === 4 && xhr.status === 200) {
-                        try {
-                            var data = JSON.parse(xhr.responseText);
-                            callback(data);
-                        } catch (parseErr) {}
+                    if (xhr.readyState === 4) {
+                        if (xhr.status === 200) {
+                            try {
+                                var data = JSON.parse(xhr.responseText);
+                                callback(data);
+                            } catch (parseErr) {
+                                if (onError) onError();
+                            }
+                        } else {
+                            if (onError) onError();
+                        }
                     }
                 };
                 xhr.send();
-            } catch (reqErr) {}
+            } catch (reqErr) {
+                if (onError) onError();
+            }
         }
 
         function fetchWeather() {
-            // Try HTTP first to avoid Android 4.4 TLS/SSL handshake blocks, fallback to HTTPS
             var url = 'http://api.open-meteo.com/v1/forecast?latitude=-8.67&longitude=115.26&current=temperature_2m,apparent_temperature,weather_code';
             legacyGet(url, function(data) {
                 if (data && data.current) {
@@ -306,14 +313,24 @@
         }
 
         function fetchExchangeRate() {
-            // Try HTTP endpoint for Android 4.4 compatibility
-            var url = 'http://api.exchangerate-api.com/v4/latest/AUD';
-            legacyGet(url, function(data) {
+            // Primary: Frankfurter (European Central Bank) over plain HTTP (no SSL redirect)
+            var primaryUrl = 'http://api.frankfurter.app/latest?from=AUD&to=IDR';
+            legacyGet(primaryUrl, function(data) {
                 if (data && data.rates && data.rates.IDR) {
                     var rate = Math.round(data.rates.IDR);
                     document.getElementById('exchange-rate').innerText = formatNumberCommas(rate);
                     document.getElementById('rate-dot').className = 'status-dot live';
                 }
+            }, function() {
+                // Backup: Open ER-API over plain HTTP
+                var backupUrl = 'http://open.er-api.com/v6/latest/AUD';
+                legacyGet(backupUrl, function(data) {
+                    if (data && data.rates && data.rates.IDR) {
+                        var rate = Math.round(data.rates.IDR);
+                        document.getElementById('exchange-rate').innerText = formatNumberCommas(rate);
+                        document.getElementById('rate-dot').className = 'status-dot live';
+                    }
+                });
             });
         }
 
