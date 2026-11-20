@@ -124,7 +124,7 @@
         }
         .trend-arrow {
             margin-left: 10px;
-            font-size: 2.1rem;
+            font-size: 1em;
         }
         .trend-up {
             color: #28cd41;
@@ -173,7 +173,10 @@
 
     <!-- Real Feel Only Box -->
     <div class="card weather-card">
-        <div class="feels-like-main" id="feels-like">RealFeel® 35°C</div>
+        <div class="feels-like-main">
+            <span id="feels-like">RealFeel® 35°C</span>
+            <span id="temp-trend" class="trend-arrow trend-flat">—</span>
+        </div>
         <div class="weather-location">
             Sanur, Bali <span id="weather-dot" class="status-dot"></span>
         </div>
@@ -197,6 +200,7 @@
 
     <script>
         var lastRate = 12274;
+        var lastFeelsLike = 35;
 
         function formatNumberCommas(num) {
             return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -287,6 +291,19 @@
             }
         }
 
+        function setTrendElement(el, newVal, prevVal) {
+            if (newVal > prevVal) {
+                el.innerText = '▲';
+                el.className = 'trend-arrow trend-up';
+            } else if (newVal < prevVal) {
+                el.innerText = '▼';
+                el.className = 'trend-arrow trend-down';
+            } else {
+                el.innerText = '—';
+                el.className = 'trend-arrow trend-flat';
+            }
+        }
+
         function fetchWeather() {
             var url = 'http://api.open-meteo.com/v1/forecast?latitude=-8.67&longitude=115.26&current=apparent_temperature,weather_code';
             legacyGet(url, function(data) {
@@ -294,65 +311,13 @@
                     var apparent = Math.round(data.current.apparent_temperature);
                     var wcode = data.current.weather_code;
 
+                    setTrendElement(document.getElementById('temp-trend'), apparent, lastFeelsLike);
+                    lastFeelsLike = apparent;
+
                     document.getElementById('feels-like').innerText = 'RealFeel® ' + apparent + '°C';
                     document.getElementById('weather-dot').className = 'status-dot live';
 
                     var alertBox = document.getElementById('weather-alert');
                     if (wcode >= 95) {
-                        document.getElementById('alert-title-text').innerText = 'SEVERE THUNDERSTORM WARNING';
-                        document.getElementById('alert-desc-text').innerText = 'Heavy storm activity reported in the Sanur / Denpasar area.';
-                        alertBox.className = 'alert-banner active';
-                    } else {
-                        alertBox.className = 'alert-banner';
-                    }
-                }
-            });
-        }
-
-        function updateTrendArrow(newRate) {
-            var arrowEl = document.getElementById('rate-trend');
-            if (newRate > lastRate) {
-                arrowEl.innerText = '▲';
-                arrowEl.className = 'trend-arrow trend-up';
-            } else if (newRate < lastRate) {
-                arrowEl.innerText = '▼';
-                arrowEl.className = 'trend-arrow trend-down';
-            } else {
-                arrowEl.innerText = '—';
-                arrowEl.className = 'trend-arrow trend-flat';
-            }
-            lastRate = newRate;
-        }
-
-        function fetchExchangeRate() {
-            var primaryUrl = 'http://api.frankfurter.app/latest?from=AUD&to=IDR';
-            legacyGet(primaryUrl, function(data) {
-                if (data && data.rates && data.rates.IDR) {
-                    var rate = Math.round(data.rates.IDR);
-                    updateTrendArrow(rate);
-                    document.getElementById('exchange-rate').innerText = formatNumberCommas(rate);
-                    document.getElementById('rate-dot').className = 'status-dot live';
-                }
-            }, function() {
-                var backupUrl = 'http://open.er-api.com/v6/latest/AUD';
-                legacyGet(backupUrl, function(data) {
-                    if (data && data.rates && data.rates.IDR) {
-                        var rate = Math.round(data.rates.IDR);
-                        updateTrendArrow(rate);
-                        document.getElementById('exchange-rate').innerText = formatNumberCommas(rate);
-                        document.getElementById('rate-dot').className = 'status-dot live';
-                    }
-                });
-            });
-        }
-
-        updateAll();
-        fetchWeather();
-        fetchExchangeRate();
-
-        setInterval(updateAll, 1000);
-        setInterval(fetchWeather, 900000);      // Every 15 minutes
-        setInterval(fetchExchangeRate, 3600000); // Every 1 hour
-    </script>
-</body>
-</html>
+                        document.getElementById('alert-title-text
+   
