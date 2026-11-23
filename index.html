@@ -60,6 +60,18 @@
             margin-right: 18px;
             font-size: 2.8rem;
         }
+        .tide-height {
+            font-size: 2.2rem;
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+        .tide-height .tide-arrow {
+            margin-left: 8px;
+        }
+        .tide-height .tide-word {
+            font-size: 1.4rem;
+            margin-left: 4px;
+        }
         .tide-details {
             font-size: 1.4rem;
             color: #999999;
@@ -175,6 +187,7 @@
                 <span class="tide-icon" id="tide-icon">📉</span>
                 <span id="tide-status">Loading Tide...</span>
             </div>
+            <div class="tide-height" id="tide-height">-- m</div>
             <div class="tide-details" id="tide-desc">Calculating next tide</div>
         </div>
     </div>
@@ -205,17 +218,29 @@
             <div class="exchange-label">IDR <span id="rate-dot" class="status-dot"></span></div>
             <div class="exchange-rate-container">
                 <span class="flag-icon"></span>
-                <span id="exchange-rate">12,274</span>
+                <span id="exchange-rate">--</span>
                 <span id="rate-trend" class="rate-trend trend-flat">—</span>
             </div>
         </div>
     </div>
 
     <script>
-        var lastRate = 12274;
+        // Use https when the page is hosted on https (e.g. GitHub Pages),
+        // otherwise http. Avoids "mixed content" blocking.
+        var PROTO = (window.location.protocol === 'https:') ? 'https:' : 'http:';
+
+        // Approximate tide heights for Sanur (metres). Adjust to taste.
+        var TIDE_HIGH_M = 2.0;
+        var TIDE_LOW_M = 0.4;
 
         function formatNumberCommas(num) {
             return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+
+        function ymd(d) {
+            return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
         }
 
         function formatTime12(dateObj) {
@@ -234,16 +259,16 @@
                 var hours = now.getHours();
                 var minutes = now.getMinutes();
                 if (minutes < 10) { minutes = '0' + minutes; }
-                
+
                 var ampm = hours >= 12 ? 'PM' : 'AM';
                 hours = hours % 12;
                 if (hours === 0) { hours = 12; }
-                
+
                 document.getElementById('clock').innerHTML = hours + ':' + minutes + '<span class="time-ampm">' + ampm + '</span>';
-                
+
                 var days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
                 var months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-                
+
                 var dateString = days[now.getDay()] + ', ' + now.getDate() + ' ' + months[now.getMonth()];
                 document.getElementById('date').innerText = dateString;
 
@@ -276,6 +301,22 @@
                 }
 
                 document.getElementById('tide-desc').innerText = 'Next ' + tideLabel.toLowerCase() + ' expected at ' + formatTime12(nextEventDate);
+
+                // Estimated tide height (smooth cosine between low and high)
+                var midM = (TIDE_HIGH_M + TIDE_LOW_M) / 2;
+                var ampM = (TIDE_HIGH_M - TIDE_LOW_M) / 2;
+                var phase = (nowMs - anchorHigh) / halfCycleMs;
+                var heightM = midM + ampM * Math.cos(Math.PI * phase);
+
+                // Next event high = tide is rising; next event low = falling
+                var arrow = isNextHigh ? '▲' : '▼';
+                var arrowClass = isNextHigh ? 'trend-up' : 'trend-down';
+                var word = isNextHigh ? 'Rising' : 'Falling';
+
+                document.getElementById('tide-height').innerHTML =
+                    heightM.toFixed(2) + ' m' +
+                    '<span class="tide-arrow ' + arrowClass + '">' + arrow + '</span>' +
+                    '<span class="tide-word ' + arrowClass + '">' + word + '</span>';
             } catch (e) {}
         }
 
@@ -284,6 +325,7 @@
             try {
                 var xhr = new XMLHttpRequest();
                 xhr.open('GET', url, true);
+                xhr.timeout = 15000;
                 xhr.onreadystatechange = function() {
                     if (xhr.readyState === 4) {
                         if (xhr.status === 200) {
@@ -305,7 +347,7 @@
         }
 
         function fetchWeather() {
-            var url = 'http://api.open-meteo.com/v1/forecast?latitude=-8.67&longitude=115.26&current=temperature_2m,apparent_temperature,weather_code';
+            var url = PROTO + '//api.open-meteo.com/v1/forecast?latitude=-8.67&longitude=115.26&current=temperature_2m,apparent_temperature,weather_code';
             legacyGet(url, function(data) {
                 if (data && data.current) {
                     var temp = Math.round(data.current.temperature_2m);
@@ -325,47 +367,87 @@
                         alertBox.className = 'alert-banner';
                     }
                 }
+            }, function() {
+                document.getElementById('weather-dot').className = 'status-dot';
+                setTimeout(fetchWeather, 60000); // retry in 1 minute
             });
         }
 
-        function updateRateTrend(newRate) {
+        // ---------- Exchange rate ----------
+        // Arrow compares the latest rate with the previous different rate,
+        // so it stays red/green instead of resetting to grey on the next poll.
+
+        function showRate(rate, prev) {
+            rate = Math.round(rate);
+            document.getElementById('exchange-rate').innerText = formatNumberCommas(rate);
+            document.getElementById('rate-dot').className = 'status-dot live';
+
             var trendEl = document.getElementById('rate-trend');
-            if (!trendEl) { return; }
-            if (newRate > lastRate) {
-                trendEl.innerText = '▲';
-                trendEl.className = 'rate-trend trend-up';
-            } else if (newRate < lastRate) {
-                trendEl.innerText = '▼';
-                trendEl.className = 'rate-trend trend-down';
-            } else {
+            if (prev === null || prev === undefined || isNaN(prev) || Math.round(prev) === rate) {
                 trendEl.innerText = '—';
                 trendEl.className = 'rate-trend trend-flat';
+            } else if (rate > Math.round(prev)) {
+                trendEl.innerText = '▲';
+                trendEl.className = 'rate-trend trend-up';
+            } else {
+                trendEl.innerText = '▼';
+                trendEl.className = 'rate-trend trend-down';
             }
-            lastRate = newRate;
+        }
+
+        // Backup source only returns one rate, so remember the last different value
+        function backupPrev(rate) {
+            var prev = null;
+            try {
+                var cur = parseFloat(localStorage.getItem('idrCur'));
+                var stored = parseFloat(localStorage.getItem('idrPrev'));
+                if (!isNaN(cur) && Math.round(cur) !== Math.round(rate)) {
+                    prev = cur;
+                    localStorage.setItem('idrPrev', cur);
+                } else if (!isNaN(stored)) {
+                    prev = stored;
+                }
+                localStorage.setItem('idrCur', rate);
+            } catch (e) {}
+            return prev;
+        }
+
+        function backupFetch() {
+            legacyGet(PROTO + '//open.er-api.com/v6/latest/AUD', function(data) {
+                if (data && data.rates && data.rates.IDR) {
+                    showRate(data.rates.IDR, backupPrev(data.rates.IDR));
+                } else {
+                    document.getElementById('rate-dot').className = 'status-dot';
+                    setTimeout(fetchExchangeRate, 60000);
+                }
+            }, function() {
+                // Both sources failed: grey dot, retry in 1 minute
+                document.getElementById('rate-dot').className = 'status-dot';
+                setTimeout(fetchExchangeRate, 60000);
+            });
         }
 
         function fetchExchangeRate() {
-            // Primary: Frankfurter (European Central Bank) over plain HTTP (no SSL redirect)
-            var primaryUrl = 'http://api.frankfurter.app/latest?from=AUD&to=IDR';
+            // Primary: Frankfurter (ECB). Ask for the last 7 days so we get
+            // the latest AND the previous business day in one request.
+            var start = new Date();
+            start.setDate(start.getDate() - 7);
+            var primaryUrl = PROTO + '//api.frankfurter.app/' + ymd(start) + '..?from=AUD&to=IDR';
+
             legacyGet(primaryUrl, function(data) {
-                if (data && data.rates && data.rates.IDR) {
-                    var rate = Math.round(data.rates.IDR);
-                    updateRateTrend(rate);
-                    document.getElementById('exchange-rate').innerText = formatNumberCommas(rate);
-                    document.getElementById('rate-dot').className = 'status-dot live';
-                }
-            }, function() {
-                // Backup: Open ER-API over plain HTTP
-                var backupUrl = 'http://open.er-api.com/v6/latest/AUD';
-                legacyGet(backupUrl, function(data) {
-                    if (data && data.rates && data.rates.IDR) {
-                        var rate = Math.round(data.rates.IDR);
-                        updateRateTrend(rate);
-                        document.getElementById('exchange-rate').innerText = formatNumberCommas(rate);
-                        document.getElementById('rate-dot').className = 'status-dot live';
+                if (data && data.rates) {
+                    var keys = Object.keys(data.rates).sort();
+                    if (keys.length > 0) {
+                        var latest = data.rates[keys[keys.length - 1]].IDR;
+                        var prev = keys.length > 1 ? data.rates[keys[keys.length - 2]].IDR : null;
+                        if (latest) {
+                            showRate(latest, prev);
+                            return;
+                        }
                     }
-                });
-            });
+                }
+                backupFetch();
+            }, backupFetch);
         }
 
         updateAll();
@@ -373,7 +455,7 @@
         fetchExchangeRate();
 
         setInterval(updateAll, 1000);
-        setInterval(fetchWeather, 900000);      // Every 15 minutes
+        setInterval(fetchWeather, 900000);       // Every 15 minutes
         setInterval(fetchExchangeRate, 3600000); // Every 1 hour
     </script>
 </body>
