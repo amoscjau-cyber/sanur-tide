@@ -224,6 +224,8 @@
         </div>
     </div>
 
+    <div id="debug" style="position:fixed; left:12px; bottom:4px; font-size:11px; color:#444444;"></div>
+
     <script>
         // Use https when the page is hosted on https (e.g. GitHub Pages),
         // otherwise http. Avoids "mixed content" blocking.
@@ -235,6 +237,14 @@
 
         function formatNumberCommas(num) {
             return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        // Tiny status line at the bottom-left to show why a fetch failed
+        var dbg = { w: 'loading', r: 'loading' };
+        function setDebug(key, msg) {
+            dbg[key] = msg;
+            var el = document.getElementById('debug');
+            if (el) { el.innerText = 'Weather: ' + dbg.w + '  |  Rate: ' + dbg.r; }
         }
 
         function pad2(n) { return n < 10 ? '0' + n : '' + n; }
@@ -329,20 +339,23 @@
                 xhr.onreadystatechange = function() {
                     if (xhr.readyState === 4) {
                         if (xhr.status === 200) {
+                            var data = null;
                             try {
-                                var data = JSON.parse(xhr.responseText);
-                                callback(data);
+                                data = JSON.parse(xhr.responseText);
                             } catch (parseErr) {
-                                if (onError) onError();
+                                if (onError) onError('bad data');
+                                return;
                             }
+                            callback(data);
                         } else {
-                            if (onError) onError();
+                            // status 0 = network/SSL/blocked, otherwise HTTP code
+                            if (onError) onError(xhr.status);
                         }
                     }
                 };
                 xhr.send();
             } catch (reqErr) {
-                if (onError) onError();
+                if (onError) onError('exception');
             }
         }
 
@@ -357,6 +370,7 @@
                     document.getElementById('temp-display').innerText = temp + '°C';
                     document.getElementById('feels-like').innerText = 'RealFeel® ' + apparent + '°C';
                     document.getElementById('weather-dot').className = 'status-dot live';
+                    setDebug('w', 'ok');
 
                     var alertBox = document.getElementById('weather-alert');
                     if (wcode >= 95) {
@@ -367,8 +381,9 @@
                         alertBox.className = 'alert-banner';
                     }
                 }
-            }, function() {
+            }, function(err) {
                 document.getElementById('weather-dot').className = 'status-dot';
+                setDebug('w', 'failed (' + err + ')');
                 setTimeout(fetchWeather, 60000); // retry in 1 minute
             });
         }
@@ -381,6 +396,7 @@
             rate = Math.round(rate);
             document.getElementById('exchange-rate').innerText = formatNumberCommas(rate);
             document.getElementById('rate-dot').className = 'status-dot live';
+            setDebug('r', 'ok');
 
             var trendEl = document.getElementById('rate-trend');
             if (prev === null || prev === undefined || isNaN(prev) || Math.round(prev) === rate) {
@@ -412,7 +428,9 @@
             return prev;
         }
 
-        function backupFetch() {
+        var primaryErr = '';
+        function backupFetch(err) {
+            if (err !== undefined) { primaryErr = err; }
             legacyGet(PROTO + '//open.er-api.com/v6/latest/AUD', function(data) {
                 if (data && data.rates && data.rates.IDR) {
                     showRate(data.rates.IDR, backupPrev(data.rates.IDR));
@@ -420,8 +438,9 @@
                     document.getElementById('rate-dot').className = 'status-dot';
                     setTimeout(fetchExchangeRate, 60000);
                 }
-            }, function() {
+            }, function(err) {
                 // Both sources failed: grey dot, retry in 1 minute
+                setDebug('r', 'failed (' + primaryErr + '/' + err + ')');
                 document.getElementById('rate-dot').className = 'status-dot';
                 setTimeout(fetchExchangeRate, 60000);
             });
