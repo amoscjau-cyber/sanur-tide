@@ -1,0 +1,48 @@
+{
+  "weather": {
+    "latitude": -8.611599,
+    "longitude": 115.249565,
+    "generationtime_ms": 0.13458728790283203,
+    "utc_offset_seconds": 0,
+    "timezone": "GMT",
+    "timezone_abbreviation": "GMT",
+    "elevation": 5.0,
+    "current_units": {
+      "time": "iso8601",
+      "interval": "seconds",
+      "temperature_2m": "°C",
+      "apparent_temperature": "°C",
+      "weather_code": "wmo code"
+    },
+    "current": {
+      "time": "2026-11-27T01:45",
+      "interval": 900,
+      "temperature_2m": 30.0,
+      "apparent_temperature": 36.3,
+      "weather_code": 3
+    }
+  },
+  "rates": {
+    "amount": 1.0,
+    "base": "AUD",
+    "start_date": "2026-11-20",
+    "end_date": "2026-11-26",
+    "rates": {
+      "2026-11-20": {
+        "IDR": 12174
+      },
+      "2026-11-23": {
+        "IDR": 12057
+      },
+      "2026-11-24": {
+        "IDR": 12106
+      },
+      "2026-11-25": {
+        "IDR": 12050
+      },
+      "2026-11-26": {
+        "IDR": 12205
+      }
+    }
+  }
+}
