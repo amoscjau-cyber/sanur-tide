@@ -359,33 +359,51 @@
             }
         }
 
-        function fetchWeather() {
+        // data.json is refreshed every ~15 min by a GitHub Action and served from
+        // the same site as this page, so old tablets don't need to trust any
+        // other website's certificate.
+        function dataUrl() { return 'data.json?t=' + new Date().getTime(); }
+
+        function applyWeather(data, source) {
+            if (!data || !data.current) { return false; }
+            var temp = Math.round(data.current.temperature_2m);
+            var apparent = Math.round(data.current.apparent_temperature);
+            var wcode = data.current.weather_code;
+
+            document.getElementById('temp-display').innerText = temp + '°C';
+            document.getElementById('feels-like').innerText = 'RealFeel® ' + apparent + '°C';
+            document.getElementById('weather-dot').className = 'status-dot live';
+            setDebug('w', 'ok (' + source + ')');
+
+            var alertBox = document.getElementById('weather-alert');
+            if (wcode >= 95) {
+                document.getElementById('alert-title-text').innerText = 'SEVERE THUNDERSTORM WARNING';
+                document.getElementById('alert-desc-text').innerText = 'Heavy storm activity reported in the Sanur / Denpasar area.';
+                alertBox.className = 'alert-banner active';
+            } else {
+                alertBox.className = 'alert-banner';
+            }
+            return true;
+        }
+
+        function fetchWeatherDirect(relayErr) {
             var url = PROTO + '//api.open-meteo.com/v1/forecast?latitude=-8.67&longitude=115.26&current=temperature_2m,apparent_temperature,weather_code';
             legacyGet(url, function(data) {
-                if (data && data.current) {
-                    var temp = Math.round(data.current.temperature_2m);
-                    var apparent = Math.round(data.current.apparent_temperature);
-                    var wcode = data.current.weather_code;
-
-                    document.getElementById('temp-display').innerText = temp + '°C';
-                    document.getElementById('feels-like').innerText = 'RealFeel® ' + apparent + '°C';
-                    document.getElementById('weather-dot').className = 'status-dot live';
-                    setDebug('w', 'ok');
-
-                    var alertBox = document.getElementById('weather-alert');
-                    if (wcode >= 95) {
-                        document.getElementById('alert-title-text').innerText = 'SEVERE THUNDERSTORM WARNING';
-                        document.getElementById('alert-desc-text').innerText = 'Heavy storm activity reported in the Sanur / Denpasar area.';
-                        alertBox.className = 'alert-banner active';
-                    } else {
-                        alertBox.className = 'alert-banner';
-                    }
+                if (!applyWeather(data, 'direct')) {
+                    setDebug('w', 'failed (bad data)');
+                    setTimeout(fetchWeather, 60000);
                 }
             }, function(err) {
                 document.getElementById('weather-dot').className = 'status-dot';
-                setDebug('w', 'failed (' + err + ')');
+                setDebug('w', 'failed (relay ' + relayErr + ', direct ' + err + ')');
                 setTimeout(fetchWeather, 60000); // retry in 1 minute
             });
+        }
+
+        function fetchWeather() {
+            legacyGet(dataUrl(), function(d) {
+                if (!applyWeather(d && d.weather, 'relay')) { fetchWeatherDirect('no weather'); }
+            }, fetchWeatherDirect);
         }
 
         // ---------- Exchange rate ----------
@@ -446,27 +464,37 @@
             });
         }
 
-        function fetchExchangeRate() {
-            // Primary: Frankfurter (ECB). Ask for the last 7 days so we get
-            // the latest AND the previous business day in one request.
+        // Takes Frankfurter's date-range response: latest vs previous business day
+        function applyRatesRange(data) {
+            if (data && data.rates) {
+                var keys = Object.keys(data.rates).sort();
+                if (keys.length > 0) {
+                    var latest = data.rates[keys[keys.length - 1]].IDR;
+                    var prev = keys.length > 1 ? data.rates[keys[keys.length - 2]].IDR : null;
+                    if (latest) {
+                        showRate(latest, prev);
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function fetchRateDirect(relayErr) {
+            // Frankfurter (ECB): last 7 days = latest AND previous business day
             var start = new Date();
             start.setDate(start.getDate() - 7);
             var primaryUrl = PROTO + '//api.frankfurter.app/' + ymd(start) + '..?from=AUD&to=IDR';
 
             legacyGet(primaryUrl, function(data) {
-                if (data && data.rates) {
-                    var keys = Object.keys(data.rates).sort();
-                    if (keys.length > 0) {
-                        var latest = data.rates[keys[keys.length - 1]].IDR;
-                        var prev = keys.length > 1 ? data.rates[keys[keys.length - 2]].IDR : null;
-                        if (latest) {
-                            showRate(latest, prev);
-                            return;
-                        }
-                    }
-                }
-                backupFetch();
+                if (!applyRatesRange(data)) { backupFetch(); }
             }, backupFetch);
+        }
+
+        function fetchExchangeRate() {
+            legacyGet(dataUrl(), function(d) {
+                if (!applyRatesRange(d && d.rates)) { fetchRateDirect('no rates'); }
+            }, fetchRateDirect);
         }
 
         updateAll();
