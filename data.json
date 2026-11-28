@@ -2,7 +2,7 @@
   "weather": {
     "latitude": -8.611599,
     "longitude": 115.249565,
-    "generationtime_ms": 0.18346309661865234,
+    "generationtime_ms": 0.39899349212646484,
     "utc_offset_seconds": 0,
     "timezone": "GMT",
     "timezone_abbreviation": "GMT",
@@ -15,11 +15,11 @@
       "weather_code": "wmo code"
     },
     "current": {
-      "time": "2026-11-28T07:45",
+      "time": "2026-11-28T08:45",
       "interval": 900,
-      "temperature_2m": 27.7,
-      "apparent_temperature": 33.8,
-      "weather_code": 55
+      "temperature_2m": 27.8,
+      "apparent_temperature": 33.5,
+      "weather_code": 51
     }
   },
   "rates": {
